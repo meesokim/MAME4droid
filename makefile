@@ -26,9 +26,11 @@ ANDROID = 1
 
 #AX86=1
 
+#AARMV6=1
+
 AARMV7=1
 
-#AARMV6=1
+#AARMV8=1
 
 ########## iOS
 
@@ -47,11 +49,10 @@ X86_MIPS3_DRC =
 X86_PPC_DRC =
 FORCE_DRC_C_BACKEND = 1
 
-
-
-#OPTIMIZE = 0
+#OPTIMIZE = 1
 
 ifdef ANDROID
+
 ifdef AMIPS
 MYPREFIX=/home/david/Projects/android/my-android-toolchain-r8-mips/bin/mipsel-linux-android-
 BASE_DEV=/home/david/Projects/android/my-android-toolchain-r8-mips/sysroot
@@ -66,7 +67,7 @@ ifdef AARMV6
 MYPREFIX=/home/david/Projects/android/my-android-toolchain-r8/bin/arm-linux-androideabi-
 BASE_DEV=/home/david/Projects/android/my-android-toolchain-r8/sysroot
 MYPREFIX=/vendor/android-ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/windows-x86_64/bin/arm-linux-androideabi-
-BASE_DEV=/vendor/android-ndk/platforms/android-18/arch-arm
+BASE_DEV=/vendor/android-ndk/platforms/android-21/arch-arm
 ANDROID_NDK=/vendor/android-ndk
 endif
 
@@ -74,9 +75,15 @@ ifdef AARMV7
 MYPREFIX=/home/david/Projects/android/my-android-toolchain-r8/bin/arm-linux-androideabi-
 BASE_DEV=/home/david/Projects/android/my-android-toolchain-r8/sysroot
 MYPREFIX=/vendor/android-ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/windows-x86_64/bin/arm-linux-androideabi-
-BASE_DEV=/vendor/android-ndk/platforms/android-18/arch-arm
+BASE_DEV=/vendor/android-ndk/platforms/android-21/arch-arm
 ANDROID_NDK=/vendor/android-ndk
 ANDROID_SDK=/vendor/android-sdk
+endif
+
+ifdef AARMV8
+PTR64 = 1
+MYPREFIX=/home/david/Projects/android/my-android-toolchain-r10c-21-arm64/bin/aarch64-linux-android-
+BASE_DEV=/home/david/Projects/android/my-android-toolchain-r10c-21-arm64/sysroot
 endif
 
 #MYPREFIX=/home/david/Projects/android/my-android-toolchain-14-crystax/bin/arm-linux-androideabi-
@@ -92,9 +99,22 @@ BASE_DEV=/home/david/Projects/iphone/toolchain/sdks/iPhoneOS2.0.sdk
 #BASE_DEV=/home/david/Projects/iphone/toolchain/sdks/iPhoneOS4.1.sdk
 else
 ##OSX
-#MYPREFIX=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin10-
-MYPREFIX=/Developer/Platforms/iPhoneOS.platform/Developer/usr/llvm-gcc-4.2/bin/arm-apple-darwin10-llvm-
-BASE_DEV=/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS4.2.sdk
+
+ifndef iOSSIMULATOR
+MYPREFIX=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin10-
+#MYPREFIX=/Developer/Platforms/iPhoneOS.platform/Developer/usr/llvm-gcc-4.2/bin/arm-apple-darwin10-llvm-
+#MYPREFIX=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/llvm-gcc-4.2/bin/arm-apple-darwin10-llvm-
+#MYPREFIX=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/
+
+#BASE_DEV=/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS4.2.sdk
+BASE_DEV=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.1.sdk
+else
+
+MYPREFIX=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/
+BASE_DEV=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator6.1.sdk
+
+endif
+
 endif
 endif
 
@@ -184,31 +204,6 @@ ifndef TARGETOS
 $(error Unable to detect TARGETOS from uname -a: $(UNAME))
 endif
 
-# Autodetect PTR64
-ifndef PTR64
-ifeq ($(firstword $(filter x86_64,$(UNAME))),x86_64)
-PTR64 = 1
-endif
-ifeq ($(firstword $(filter amd64,$(UNAME))),amd64)
-PTR64 = 1
-endif
-ifeq ($(firstword $(filter ppc64,$(UNAME))),ppc64)
-PTR64 = 1
-endif
-endif
-
-# Autodetect BIGENDIAN 
-# MacOSX
-ifndef BIGENDIAN
-ifneq (,$(findstring Power,$(UNAME)))
-BIGENDIAN=1
-endif
-# Linux
-ifneq (,$(findstring ppc,$(UNAME)))
-BIGENDIAN=1
-endif
-endif # BIGENDIAN
-
 endif # OS/2
 endif # CROSS_BUILD	
 endif # Windows_NT
@@ -293,7 +288,7 @@ endif
 BUILD_EXPAT = 1
 
 # uncomment next line to build zlib as part of MAME build
-BUILD_ZLIB = 1
+#BUILD_ZLIB = 1
 
 # uncomment next line to include the symbols
 # SYMBOLS = 1
@@ -317,6 +312,14 @@ BUILD_ZLIB = 1
 # specify optimization level or leave commented to use the default
 # (default is OPTIMIZE = 3 normally, or OPTIMIZE = 0 with symbols)
 # OPTIMIZE = 3
+
+
+
+
+
+
+
+
 
 
 ###########################################################################
@@ -384,15 +387,27 @@ endif
 
 ifdef iOSOSX
 
-AR = /Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/ar
-CC = @$(MYPREFIX)gcc-4.2
-LD =  $(MYPREFIX)g++-4.2
+AR = @$(MYPREFIX)ar
+#CC = @$(MYPREFIX)gcc-4.2
+#LD = @$(MYPREFIX)g++-4.2
+CC = @$(MYPREFIX)gcc
+LD = @$(MYPREFIX)g++
+
 
 else
 
 AR = @$(MYPREFIX)ar
+ifdef AARMV7
+CC = @$(MYPREFIX)gcc-4.9
+#CC = @$(MYPREFIX)g++
+else
 CC = @$(MYPREFIX)gcc
-LD = @$(MYPREFIX)g++
+endif
+LD = $(MYPREFIX)g++
+
+#AR = @$(MYPREFIX)clang
+#CC = @$(MYPREFIX)clang
+#LD = @$(MYPREFIX)clang++
 
 endif
 
@@ -446,8 +461,19 @@ endif
 FULLNAME = $(PREFIX)$(PREFIXSDL)$(NAME)$(SUFFIX)$(SUFFIX64)$(SUFFIXDEBUG)$(SUFFIXPROFILE)
 
 # add an EXE suffix to get the final emulator name
+ifdef iOSNOJAILBREAK
+ifdef iOSSIMULATOR
+EMULATOR = libmamesim.a
+endif
+ifdef iOSARMV7
+EMULATOR = libmamearmv7.a
+endif
+ifdef iOSARMV7S
+EMULATOR = libmamearmv7s.a
+endif
+else
 EMULATOR = $(FULLNAME)$(EXE)
-
+endif
 
 
 #-------------------------------------------------
@@ -523,9 +549,11 @@ CFLAGS = $(CCOMFLAGS) $(CPPONLYFLAGS)
 
 # we compile C-only to C89 standard with GNU extensions
 # we compile C++ code to C++98 standard with GNU extensions
-CONLYFLAGS += -std=gnu89
+#CONLYFLAGS += -std=gnu89
+CONLYFLAGS += -std=gnu99
 CPPONLYFLAGS += -x c++ -std=gnu++98
-COBJFLAGS += -x objective-c++
+#COBJFLAGS += -x objective-c++
+COBJFLAGS += -x objective-c
 
 # this speeds it up a bit by piping between the preprocessor/compiler/assembler
 CCOMFLAGS += -pipe
@@ -567,9 +595,8 @@ CCOMFLAGS += \
 	-Wformat -Wformat-security \
 	-Wwrite-strings \
 	-Wno-sign-compare \
-	
-#	-Wundef \	
-#	-Wall \
+	-Wundef \
+	-Wall \
 #	-Wcast-align \
 	
 # warnings only applicable to C compiles
@@ -671,6 +698,7 @@ OBJDIRS = $(OBJ)
 # define standard libarires for CPU and sounds
 #-------------------------------------------------
 
+
 #LIBEMU = $(OBJ)/libemu.a
 #LIBCPU = $(OBJ)/libcpu.a
 #LIBDASM = $(OBJ)/libdasm.a
@@ -712,6 +740,8 @@ endif
 # add SoftFloat floating point emulation library
 SOFTFLOAT = $(OBJ)/libsoftfloat.a
 
+# add HQX library
+HQX = $(OBJ)/libhqx.a
 
 ifdef ANDROID
 CCOMFLAGS += --sysroot $(BASE_DEV)
@@ -722,31 +752,68 @@ CCOMFLAGS += -fpic
 EMULATOR=libMAME4droid.so
 
 ifdef AARMV7
-CCOMFLAGS += -march=armv7-a -mfloat-abi=softfp -DARMV7
+#CCOMFLAGS += -fno-strict-aliasing
+##CCOMFLAGS += -mno-unaligned-access
+CCOMFLAGS += -mthumb 
+CCOMFLAGS += -fPIC  -mthumb-interwork -fsigned-char -finline  
+CCOMFLAGS += -fno-common -fno-builtin 
+CCOMFLAGS += -fweb -frename-registers -fsingle-precision-constant
+#CCOMFLAGS += -mstructure-size-boundary=32 -falign-functions=16
+#CCOMFLAGS += -DALIGN_INTS -DALIGN_SHORTS 
+CCOMFLAGS += -DLSB_FIRST -fno-merge-constants
+CCOMFLAGS += -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16 -DARMV7
+#CCOMFLAGS += -std=gnu99
 #CCOMFLAGS += -mfpu=neon
 #CCOMFLAGS += -pipe  -mtune=cortex-a9
-LDFLAGS += -Wl,--fix-cortex-a8
+CCOMFLAGS += -Wno-unused-but-set-variable -Wno-narrowing
+LDFLAGS += -march=armv7-a -Wl,--fix-cortex-a8
+CCOMFLAGS += -ffast-math
 endif
 
 ifdef AARMV6
 LDFLAGS += -Wl,--fix-cortex-a8
 endif
 
+ifdef AARMV8
+CCOMFLAGS += -fPIC -fsigned-char -finline  
 
-CCOMFLAGS += -Wno-psabi
+CCOMFLAGS += -fno-common -fno-builtin 
+CCOMFLAGS += -fweb -frename-registers -fsingle-precision-constant
+CCOMFLAGS += -fno-common -fno-builtin 
+CCOMFLAGS += -DLSB_FIRST -fno-merge-constants
 
-LDFLAGS += -llog -lgcc
-LDFLAGS += -shared
+CCOMFLAGS += -Wno-unused-but-set-variable -Wno-narrowing
+CCOMFLAGS += -march=armv8-a 
+CCOMFLAGS += -mtune=cortex-a53
+LDFLAGS += -march=armv8-a 
+endif
+
+#CLANG
+#CCOMFLAGS += -Wno-constant-logical-operand
+#CCOMFLAGS += -Wno-literal-conversion
+#CCOMFLAGS += -Wno-parentheses-equality
+#CCOMFLAGS += -Wno-tautological-compare
+#CCOMFLAGS += -Wno-sizeof-pointer-memaccess
+
+#GCC
+#CCOMFLAGS += -Wno-psabi 
+CCOMFLAGS += -Wno-sign-compare 
+
+LDFLAGS += -llog -lgcc -lOpenSLES
+LDFLAGS += -Wl,-soname,libMAME4droid.so -shared
 LDFLAGS += -lc -lm 
 LDFLAGS += -L$(BASE_DEV)/usr/lib
 
-CCOMFLAGS += -fsigned-char -finline  
+
+#CCOMFLAGS += -fsigned-char -finline  
 
 #CCOMFLAGS += -fno-common -fno-builtin
 
 #CCOMFLAGS += -Wno-sign-compare -Wunused -Wpointer-arith -Wcast-align -Waggregate-return -Wshadow
 
-CCOMFLAGS += -ffast-math  -fsingle-precision-constant
+#CCOMFLAGS += -ffast-math  -fsingle-precision-constant
+
+#CCOMFLAGS += -ffast-math
 
 #CCOMFLAGS += -falign-functions=16
 
@@ -764,26 +831,74 @@ ifdef iOS
 #CCOMFLAGS += --sysroot $(BASE_DEV)
 CCOMFLAGS += -DIOS
 
+###
+#CCOMFLAGS += -fno-short-enums
+#CCOMFLAGS += -fshort-enums  
+###
+
+ifndef iOSNOJAILBREAK
+CCOMFLAGS += -DBTJOY -DJAILBREAK
+endif
+
 ifndef iOSOSX
+
 CCOMFLAGS += -DIOS3
 CCOMFLAGS += -F/home/david/Projects/iphone/toolchain/sdks/iPhoneOS3.1.2.sdk/System/Library/PrivateFrameworks
-else
-CCOMFLAGS += -F/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS4.2.sdk/System/Library/PrivateFrameworks
-CCOMFLAGS += -F/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS4.2.sdk/System/Library/Frameworks
-CCOMFLAGS +=  -I/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS4.2.sdk/usr/include
-CCOMFLAGS +=  -I/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS4.2.sdk/usr/include/c++/4.2.1/armv7-apple-darwin10/
 
-CCOMFLAGS += -march=armv7-a -mfloat-abi=softfp -DARMV7
+else #OSX
+
+#CFLAGS += -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator6.0.sdk 
+
+CCOMFLAGS += -F$(BASE_DEV)/System/Library/PrivateFrameworks
+CCOMFLAGS += -F$(BASE_DEV)/System/Library/Frameworks
+CCOMFLAGS +=  -I$(BASE_DEV)/usr/include
+#CCOMFLAGS +=  -I$(BASE_DEV)/include/c++/4.2.1/armv7-apple-darwin10/
+
+#CCOMFLAGS += -march=armv7-a -mfloat-abi=softfp -DARMV7
+#CCOMFLAGS += -march=armv7s -DARMV7
+
+ifndef iOSSIMULATOR
+
+ifndef iOSARMV7S
+CCOMFLAGS += -arch armv7 
+LDFLAGS += -arch armv7
+else
+CCOMFLAGS += -arch armv7s 
+LDFLAGS += -arch armv7s
+endif
+
+CCOMFLAGS += -miphoneos-version-min=5.0
+
+#LDFLAGS  += -march=armv7s
+#LDFLAGS  += -march=armv7-a
+
+#LDFLAGS +=   -ios_version_min 5.0
+#CCOMFLAGS += -x objective-c 
+
+else
+
+CCOMFLAGS += -arch i386 
+#CCOMFLAGS +=  -mios-simulator-version-min=6.0 
+CCOMFLAGS += -D__IPHONE_OS_VERSION_MIN_REQUIRED=50000 
+#CCOMFLAGS += -x objective-c  -fmessage-length=0 -Wno-trigraphs -fasm-blocks -O0 -Wreturn-type -Wunused-variable -fexceptions -fvisibility=hidden -fvisibility-inlines-hidden -mmacosx-version-min=10.6 -fpascal-strings -gdwarf-2 -fobjc-legacy-dispatch -fobjc-abi-version=2
+
+LDFLAGS += -arch i386
 
 endif 
 
-LDFLAGS += -framework Foundation -framework CoreFoundation -framework UIKit -framework QuartzCore -framework CoreGraphics -framework AudioToolbox
+endif 
+
+LDFLAGS += -framework Foundation -framework CoreFoundation -framework UIKit -framework QuartzCore -framework CoreGraphics -framework AudioToolbox -framework GameKit -framework CoreBluetooth
 LDFLAGS += -F$(BASE_DEV)/System/Library/Frameworks
 LDFLAGS += -F$(BASE_DEV)/System/Library/PrivateFrameworks
 LDFLAGS += -L$(BASE_DEV)/usr/lib 
+LDFLAGS += -L$(BASE_DEV)/usr/lib/system  
 LDFLAGS += -lobjc -lpthread -bind_at_load
 LDFLAGS += -L./lib/
-LDFLAGS += -lBTstack
+ifndef iOSNOJAILBREAK
+#LDFLAGS += -lBTstack 
+LDFLAGS += -weak_library ./lib/libBTstack.dylib
+endif
 CCOMFLAGS  += -ffast-math -fsingle-precision-constant
 
 
@@ -829,7 +944,11 @@ include $(SRC)/build/build.mak
 include $(SRC)/tools/tools.mak
 
 ifdef iOS
+ifndef iOSNOJAILBREAK
 include $(SRC)/../iOS/objc.mak
+else
+#include $(SRC)/../iOS/objc_njb.mak
+endif
 endif
 
 # combine the various definitions to one
@@ -840,6 +959,7 @@ CDEFS = $(DEFS)
 #-------------------------------------------------
 # primary targets
 #-------------------------------------------------
+
 
 emulator: maketree $(BUILD) $(EMULATOR)
 
@@ -880,7 +1000,6 @@ $(sort $(OBJDIRS)):
 #	cp -t $(OBJ)/build prec-build/file2str.py
 
 #$(OBJ)/build/m68kmake$(EXE):
-	
 #	cp -t $(OBJ)/build prec-build/m68kmake$(EXE)
 
 #$(OBJ)/build/tmsmake$(EXE):
@@ -916,16 +1035,16 @@ $(OBJ)/build/verinfo$(CCEXE):
 ifndef EXECUTABLE_DEFINED
 
 # always recompile the version string
-#$(VERSIONOBJ): $(DRVLIBS) $(LIBOSD) $(LIBCPU) $(LIBEMU) $(LIBSOUND) $(LIBUTIL) $(EXPAT) $(ZLIB) $(SOFTFLOAT) $(LIBOCORE) $(RESFILE)
-$(VERSIONOBJ): $(DRVLIBS) $(OSDOBJS) $(CPUOBJS) $(LIBEMUOBJS) $(SOUNDOBJS) $(UTILOBJS) $(EXPAT) $(ZLIB) $(SOFTFLOAT) $(OSDCOREOBJS) $(RESFILE)
+#$(VERSIONOBJ): $(DRVLIBS) $(LIBOSD) $(LIBCPU) $(LIBEMU) $(LIBSOUND) $(LIBUTIL) $(EXPAT) $(ZLIB) $(SOFTFLOAT) $(HQX) $(LIBOCORE) $(RESFILE)
 
 #$(EMULATOR): $(VERSIONOBJ) $(DRVLIBS) $(LIBOSD) $(LIBCPU) $(LIBEMU) $(LIBDASM) $(LIBSOUND) $(LIBUTIL) $(EXPAT) $(SOFTFLOAT) $(ZLIB) $(LIBOCORE) $(RESFILE)
 $(EMULATOR): $(VERSIONOBJ) $(DRVLIBS) $(OSDOBJS) $(CPUOBJS) $(LIBEMUOBJS) $(DASMOBJS) $(SOUNDOBJS) $(UTILOBJS) $(EXPAT) $(SOFTFLOAT) $(ZLIB) $(OSDCOREOBJS) $(RESFILE)
 	@echo Linking $@...
 	@cp $(BASE_DEV)/usr/lib/crtbegin_so.o .
 	@cp $(BASE_DEV)/usr/lib/crtend_so.o .
-	$(LD)  $(LDFLAGSEMULATOR) $^ $(LIBS) -o $@ $(LDFLAGS)
-	@mv $@ android/src/main/libs/lib
+	echo  $^ | xargs $(LD) $(LDFLAGS) $(LDFLAGSEMULATOR) $(LIBS) -o $@
+#$(LD) $(LDFLAGS) $(LDFLAGSEMULATOR) $^ $(LIBS) -o $@ 
+	@mv $@ android/src/main/libs/armeabi-v7a 	 	
 	@echo Packaging apk...
 	@gradlew assembleDebug
 ifeq ($(TARGETOS),win32)
@@ -937,7 +1056,7 @@ endif
 endif
 
 install:
-	@$(ANDROID_SDK)/platform-tools/adb install android/build/outputs/apk/android-debug-unaligned.apk
+	@$(ANDROID_SDK)/platform-tools/adb install android/build/outputs/apk/android-debug.apk
 	
 log:
 	@$(ANDROID_SDK)/platform-tools/adb logcat > x
@@ -947,6 +1066,7 @@ log:
 
 $(OBJ)/%.o: $(SRC)/%.c | $(OSPREBUILD)
 	@echo Compiling $<...
+	@echo $(CC) $(CDEFS) $(CFLAGS) -c $< -o $@
 	$(CC) $(CDEFS) $(CFLAGS) -c $< -o $@
 
 $(OBJ)/%.pp: $(SRC)/%.c | $(OSPREBUILD)
@@ -969,7 +1089,7 @@ $(OBJ)/%.fh: $(SRC)/%.png $(OBJ)/build/png2bdc.py $(FILE2STR)
 $(OBJ)/%.a:
 	@echo Archiving $@...
 	$(RM) $@
-	$(AR) $(ARFLAGS) $@ $^
+	$(AR) -v $(ARFLAGS) $@ $^
 
 $(OBJ)/%.o: %.m
 	@echo Compiling $<...
