@@ -74,10 +74,11 @@ endif
 ifdef AARMV7
 MYPREFIX=/home/david/Projects/android/my-android-toolchain-r8/bin/arm-linux-androideabi-
 BASE_DEV=/home/david/Projects/android/my-android-toolchain-r8/sysroot
-MYPREFIX=/vendor/android-ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/windows-x86_64/bin/arm-linux-androideabi-
-BASE_DEV=/vendor/android-ndk/platforms/android-19/arch-arm
-ANDROID_NDK=/vendor/android-ndk
-ANDROID_SDK=/vendor/android-sdk
+ANDROID_NDK=$(ANDROID_NDK_ROOT)
+ANDROID_SDK=$(ANDROID_SDK_ROOT)
+MYPREFIX=$(ANDROID_NDK_PREFIX)
+ANDROID_VERSION=19
+BASE_DEV=$(ANDROID_NDK)/platforms/android-$(ANDROID_VERSION)/arch-arm
 endif
 
 ifdef AARMV8
@@ -745,8 +746,8 @@ HQX = $(OBJ)/libhqx.a
 
 ifdef ANDROID
 CCOMFLAGS += --sysroot $(BASE_DEV)
-#CCOMFLAGS += -I$(ANDROID_NDK)/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi/include 
-#CCOMFLAGS += -I$(ANDROID_NDK)/sources/cxx-stl/gnu-libstdc++/4.9/include 
+CCOMFLAGS += -I$(ANDROID_NDK)/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi/include 
+CCOMFLAGS += -I$(ANDROID_NDK)/sources/cxx-stl/gnu-libstdc++/4.9/include 
 CCOMFLAGS += -DANDROID
 CCOMFLAGS += -fpic 
 EMULATOR=libMAME4droid.so
@@ -1006,7 +1007,17 @@ $(sort $(OBJDIRS)):
 	
 #$(OBJ)/build/png2bdc.py:
 #	cp -t $(OBJ)/build prec-build/png2bdc.py
+ifeq ($(OS),Windows_NT)
+TARGETOS = win32
+endif
+UNAME = $(shell uname -a)
+ifeq ($(firstword $(filter Linux,$(UNAME))),Linux)
+TARGETTOS = linux
+endif
+
+ifeq ($(TARGETOS), win32)
 CCEXE=.exe
+endif
 
 $(OBJ)/build/file2str$(CCEXE):
 	@echo making file2str
@@ -1042,7 +1053,8 @@ $(EMULATOR): $(VERSIONOBJ) $(DRVLIBS) $(OSDOBJS) $(CPUOBJS) $(LIBEMUOBJS) $(DASM
 	@echo Linking $@...
 	@cp $(BASE_DEV)/usr/lib/crtbegin_so.o .
 	@cp $(BASE_DEV)/usr/lib/crtend_so.o .
-	@echo $^ | xargs $(LD) $(LDFLAGS) $(LDFLAGSEMULATOR) $(LIBS) -export-dynamic -rdynamic -symbolic -o $@
+	@echo $^ > objs
+	$(LD) $(LDFLAGS) $(LDFLAGSEMULATOR) $(LIBS) @objs -export-dynamic -rdynamic -symbolic -o $@
 #$(LD) $(LDFLAGS) $(LDFLAGSEMULATOR) $^ $(LIBS) -o $@ 
 	@mv $@ android/libs/armeabi-v7a 	 	
 	@echo Packaging apk...
