@@ -17,7 +17,7 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_LDLIBS    := -ldl -llog
+LOCAL_LDLIBS    := -ldl -llog -march=armv7-a -Wl,--fix-cortex-a8
 LOCAL_MODULE    := mame4droid-jni
 LOCAL_SRC_FILES := mame4droid-jni.c
 

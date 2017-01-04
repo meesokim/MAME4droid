@@ -5,9 +5,9 @@ android {
     buildToolsVersion "23.0.3"
 
     defaultConfig {
-        applicationId "com.mame4android.reloaded"
+        applicationId "com.seleuco.mame4android"
         minSdkVersion 18
-        targetSdkVersion 18
+        targetSdkVersion 19
 
         ndk {
             moduleName 'main'
@@ -17,7 +17,7 @@ android {
 
     sourceSets.main {
         jni.srcDirs = []
-        jniLibs.srcDir 'src/main/libs'
+        jniLibs.srcDir 'libs'
     }
 
     buildTypes {
@@ -26,4 +26,17 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
+	
+    // Call regular ndk-build (.cmd) script from the app directory
+    //task ndkBuild(type: Exec) {
+    //   commandLine '/vendor/android-ndk/build/ndk-build', '-C', file('.').absolutePath
+    //}
+
+    tasks.withType(JavaCompile) {
+        compileTask -> compileTask.dependsOn 
+    }	
+
+	aaptOptions {
+       cruncherEnabled = false
+   }	
 }

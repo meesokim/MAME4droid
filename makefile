@@ -67,7 +67,7 @@ ifdef AARMV6
 MYPREFIX=/home/david/Projects/android/my-android-toolchain-r8/bin/arm-linux-androideabi-
 BASE_DEV=/home/david/Projects/android/my-android-toolchain-r8/sysroot
 MYPREFIX=/vendor/android-ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/windows-x86_64/bin/arm-linux-androideabi-
-BASE_DEV=/vendor/android-ndk/platforms/android-21/arch-arm
+BASE_DEV=/vendor/android-ndk/platforms/android-19/arch-arm
 ANDROID_NDK=/vendor/android-ndk
 endif
 
@@ -75,7 +75,7 @@ ifdef AARMV7
 MYPREFIX=/home/david/Projects/android/my-android-toolchain-r8/bin/arm-linux-androideabi-
 BASE_DEV=/home/david/Projects/android/my-android-toolchain-r8/sysroot
 MYPREFIX=/vendor/android-ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/windows-x86_64/bin/arm-linux-androideabi-
-BASE_DEV=/vendor/android-ndk/platforms/android-21/arch-arm
+BASE_DEV=/vendor/android-ndk/platforms/android-19/arch-arm
 ANDROID_NDK=/vendor/android-ndk
 ANDROID_SDK=/vendor/android-sdk
 endif
@@ -745,10 +745,10 @@ HQX = $(OBJ)/libhqx.a
 
 ifdef ANDROID
 CCOMFLAGS += --sysroot $(BASE_DEV)
-CCOMFLAGS += -I$(ANDROID_NDK)/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi/include 
-CCOMFLAGS += -I$(ANDROID_NDK)/sources/cxx-stl/gnu-libstdc++/4.9/include 
+#CCOMFLAGS += -I$(ANDROID_NDK)/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi/include 
+#CCOMFLAGS += -I$(ANDROID_NDK)/sources/cxx-stl/gnu-libstdc++/4.9/include 
 CCOMFLAGS += -DANDROID
-CCOMFLAGS += -fpic
+CCOMFLAGS += -fpic 
 EMULATOR=libMAME4droid.so
 
 ifdef AARMV7
@@ -761,17 +761,17 @@ CCOMFLAGS += -fweb -frename-registers -fsingle-precision-constant
 #CCOMFLAGS += -mstructure-size-boundary=32 -falign-functions=16
 #CCOMFLAGS += -DALIGN_INTS -DALIGN_SHORTS 
 CCOMFLAGS += -DLSB_FIRST -fno-merge-constants
-CCOMFLAGS += -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16 -DARMV7
-#CCOMFLAGS += -std=gnu99
+CCOMFLAGS += -march=armv7-a -mfpu=vfpv3-d16 -DARMV7
+#CCOMFLAGS += -std=gnu99 -mfloat-abi=softfp 
 #CCOMFLAGS += -mfpu=neon
 #CCOMFLAGS += -pipe  -mtune=cortex-a9
 CCOMFLAGS += -Wno-unused-but-set-variable -Wno-narrowing
-LDFLAGS += -march=armv7-a -Wl,--fix-cortex-a8
+LDFLAGS += -march=armv7-a
 CCOMFLAGS += -ffast-math
 endif
 
 ifdef AARMV6
-LDFLAGS += -Wl,--fix-cortex-a8
+LDFLAGS += -Wl,--fix-cortex-a8 
 endif
 
 ifdef AARMV8
@@ -801,8 +801,7 @@ CCOMFLAGS += -Wno-sign-compare
 
 LDFLAGS += -llog -lgcc -lOpenSLES
 LDFLAGS += -Wl,-soname,libMAME4droid.so -shared
-LDFLAGS += -lc -lm 
-LDFLAGS += -L$(BASE_DEV)/usr/lib
+LDFLAGS += -lc -lm -L$(BASE_DEV)/usr/lib -g
 
 
 #CCOMFLAGS += -fsigned-char -finline  
@@ -884,14 +883,14 @@ CCOMFLAGS += -D__IPHONE_OS_VERSION_MIN_REQUIRED=50000
 
 LDFLAGS += -arch i386
 
-endif 
+endif
 
 endif 
 
 LDFLAGS += -framework Foundation -framework CoreFoundation -framework UIKit -framework QuartzCore -framework CoreGraphics -framework AudioToolbox -framework GameKit -framework CoreBluetooth
 LDFLAGS += -F$(BASE_DEV)/System/Library/Frameworks
 LDFLAGS += -F$(BASE_DEV)/System/Library/PrivateFrameworks
-LDFLAGS += -L$(BASE_DEV)/usr/lib 
+LDFLAGS += -L$(BASE_DEV)/usr/lib
 LDFLAGS += -L$(BASE_DEV)/usr/lib/system  
 LDFLAGS += -lobjc -lpthread -bind_at_load
 LDFLAGS += -L./lib/
@@ -1007,9 +1006,10 @@ $(sort $(OBJDIRS)):
 	
 #$(OBJ)/build/png2bdc.py:
 #	cp -t $(OBJ)/build prec-build/png2bdc.py
-
+CCEXE=.exe
 
 $(OBJ)/build/file2str$(CCEXE):
+	@echo making file2str
 	mkdir -p $(OBJ)/build
 	cp -R prec-build/file2str$(CCEXE) $(OBJ)/build 
 
@@ -1042,9 +1042,9 @@ $(EMULATOR): $(VERSIONOBJ) $(DRVLIBS) $(OSDOBJS) $(CPUOBJS) $(LIBEMUOBJS) $(DASM
 	@echo Linking $@...
 	@cp $(BASE_DEV)/usr/lib/crtbegin_so.o .
 	@cp $(BASE_DEV)/usr/lib/crtend_so.o .
-	echo  $^ | xargs $(LD) $(LDFLAGS) $(LDFLAGSEMULATOR) $(LIBS) -o $@
+	@echo $^ | xargs $(LD) $(LDFLAGS) $(LDFLAGSEMULATOR) $(LIBS) -export-dynamic -rdynamic -symbolic -o $@
 #$(LD) $(LDFLAGS) $(LDFLAGSEMULATOR) $^ $(LIBS) -o $@ 
-	@mv $@ android/src/main/libs/armeabi-v7a 	 	
+	@mv $@ android/libs/armeabi-v7a 	 	
 	@echo Packaging apk...
 	@gradlew assembleDebug
 ifeq ($(TARGETOS),win32)
@@ -1056,7 +1056,7 @@ endif
 endif
 
 install:
-	@$(ANDROID_SDK)/platform-tools/adb install android/build/outputs/apk/android-debug.apk
+	@$(ANDROID_SDK)/platform-tools/adb install android/build/outputs/apk/android-debug-unaligned.apk
 	
 log:
 	@$(ANDROID_SDK)/platform-tools/adb logcat > x
@@ -1066,7 +1066,6 @@ log:
 
 $(OBJ)/%.o: $(SRC)/%.c | $(OSPREBUILD)
 	@echo Compiling $<...
-	@echo $(CC) $(CDEFS) $(CFLAGS) -c $< -o $@
 	$(CC) $(CDEFS) $(CFLAGS) -c $< -o $@
 
 $(OBJ)/%.pp: $(SRC)/%.c | $(OSPREBUILD)

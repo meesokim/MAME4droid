@@ -161,7 +161,7 @@ void myJNI_initVideo(void *buffer, int width, int height, int pitch)
 
 void myJNI_dumpVideo()
 {
-JNIEnv *env;
+    JNIEnv *env;
     (*jVM)->GetEnv(jVM, (void**) &env, JNI_VERSION_1_4);
 
 #ifdef DEBUG
@@ -240,6 +240,7 @@ void myJNI_dumpAudio2(void *buffer, int size)
 #ifdef DEBUG
     //__android_log_print(ANDROID_LOG_DEBUG, "mame4droid-jni", "dumpAudio %ld %d",buffer, size);
 #endif
+
     if(audioBuffer==NULL)
     {
        tmp = (*env)->NewDirectByteBuffer(env, audioByteBuffer, 882*2*2*10);
@@ -247,6 +248,7 @@ void myJNI_dumpAudio2(void *buffer, int size)
     }
     
     memcpy(audioByteBuffer,buffer,size);
+
     (*env)->CallStaticVoidMethod(env, cEmulator, android_dumpAudio, audioBuffer,(jint)size);
 
 }
@@ -307,7 +309,7 @@ int JNI_OnLoad(JavaVM* vm, void* reserved)
 
     cEmulator = (jclass) (*env)->NewGlobalRef(env,cEmulator );
 
-    android_dumpVideo = (*env)->GetStaticMethodID(env,cEmulator,"bitblt","(Ljava/nio/ByteBuffer;)V");
+    android_dumpVideo = (*env)->GetStaticMethodID(env,cEmulator,"bitblt","(Ljava/nio/ByteBuffer;Z)V");
     
     if(android_dumpVideo==NULL)
     {
@@ -348,6 +350,7 @@ int JNI_OnLoad(JavaVM* vm, void* reserved)
         return -1;
     }
    
+#if 0	
     android_netplayWarn = (*env)->GetStaticMethodID(env,cEmulator,"netplayWarn","(Ljava/lang/String;)V");
 
     if(android_netplayWarn==NULL)
@@ -355,7 +358,7 @@ int JNI_OnLoad(JavaVM* vm, void* reserved)
         __android_log_print(ANDROID_LOG_ERROR, "mame4droid-jni", "Failed to find method netplayWarn");
         return -1;
     }
-   
+#endif   
     return JNI_VERSION_1_4;
 }
 
@@ -410,7 +413,7 @@ JNIEXPORT void JNICALL Java_com_seleuco_mame4droid_Emulator_init
         __android_log_print(ANDROID_LOG_ERROR, "mame4droid-jni", "Error setting pthread priority");
         return;
     }
-    */
+    */  
 }
 
 JNIEXPORT void JNICALL Java_com_seleuco_mame4droid_Emulator_setPadData
